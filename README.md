@@ -34,6 +34,20 @@ uv tool upgrade claude-swap
 pipx upgrade claude-swap
 ```
 
+## Claude desktop app (macOS)
+
+Switch the Claude desktop app between accounts and keep your local Code sessions in the sidebar across them (cloud sessions stay with their own account). Each command quits and relaunches the app, so run it from a regular terminal, not from a session inside the app.
+
+```bash
+cswap desktop save main        # save the app's current login
+cswap desktop login            # park it and reopen the app logged out; log in with another account
+cswap desktop save alt
+cswap desktop switch main      # swap logins, sync local sessions, relaunch
+cswap desktop list
+```
+
+Don't log out inside the app to add an account; use `cswap desktop login`, since logging out can revoke the saved login.
+
 ## Usage
 
 ### Add your first account

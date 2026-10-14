@@ -1001,6 +1001,11 @@ def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "config":
         _config_command(sys.argv[2:])
         return
+    if argv and argv[0] == "desktop":
+        from claude_swap import desktop
+
+        desktop.main(argv[1:])
+        return
     if argv and argv[0] == "map":
         _map_command(argv[1:])
         return
@@ -1049,6 +1054,7 @@ Commands:
   %(prog)s enable <num|email>         return a disabled account to rotation
   %(prog)s run <num|email> [-- ...]   run as an account, this terminal only
   %(prog)s run                        run the current dir's mapped account
+  %(prog)s desktop [list|save|login|switch]  switch the Claude desktop app (macOS)
   %(prog)s map <num|email> [path]     map a directory to an account
   %(prog)s map                        list directory mappings
   %(prog)s unmap [path]               remove a directory mapping
