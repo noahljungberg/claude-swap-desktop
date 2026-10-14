@@ -50,3 +50,16 @@ def test_sync_sessions_newest_wins_and_skips_other_files(tmp_path):
     assert not (b / "archived-sessions.idx").exists()
     assert desktop.sync_sessions(ud, "acct-b") == 0
     assert desktop.sync_sessions(ud, "acct-new") == 0
+
+
+def test_retire_ssh_processes_only_flips_adoptable(tmp_path):
+    org = tmp_path / "claude-code-sessions" / "acct-a" / "org-1"
+    org.mkdir(parents=True)
+    (org / "local_ssh.json").write_text(json.dumps({"sshReattach": {"state": "adoptable", "processId": "p"}}))
+    (org / "local_gone.json").write_text(json.dumps({"sshReattach": {"state": "blocked"}}))
+    (org / "local_plain.json").write_text(json.dumps({"title": "local"}))
+
+    assert desktop.retire_ssh_processes(tmp_path) == 1
+    assert json.loads((org / "local_ssh.json").read_text())["sshReattach"] == {"state": "reap_only", "processId": "p"}
+    assert json.loads((org / "local_gone.json").read_text())["sshReattach"]["state"] == "blocked"
+    assert desktop.retire_ssh_processes(tmp_path) == 0

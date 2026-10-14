@@ -171,6 +171,26 @@ def sync_sessions(user_data: Path, account: str) -> int:
     return copied
 
 
+def retire_ssh_processes(user_data: Path) -> int:
+    """Stop the app re-adopting SSH session CLIs spawned under the old account.
+
+    SSH sessions keep their remote ``claude`` running across app restarts and
+    the app re-adopts any ``sshReattach.state == "adoptable"`` one without an
+    account check, so it keeps using the old account's token. ``reap_only`` is
+    what the app itself writes on credential revoke: it kills the old process
+    at the next spawn and starts a fresh one under the current login.
+    """
+    retired = 0
+    for f in (user_data / SESSIONS_DIR).glob("*/*/local_*.json"):
+        data = json.loads(f.read_text())
+        reattach = data.get("sshReattach")
+        if isinstance(reattach, dict) and reattach.get("state") == "adoptable":
+            reattach["state"] = "reap_only"
+            f.write_text(json.dumps(data))
+            retired += 1
+    return retired
+
+
 # --- commands --------------------------------------------------------------
 
 def _with_app_closed(fn):
@@ -199,9 +219,10 @@ def cmd_switch(query: str) -> None:
     if current_account(USER_DATA):
         save_snapshot(USER_DATA, root)
     restore_snapshot(USER_DATA, root, target)
+    r = retire_ssh_processes(USER_DATA)
     n = sync_sessions(USER_DATA, target)
     launch_app()
-    print(f"Switched desktop app to {target}; synced {n} session files")
+    print(f"Switched desktop app to {target}; synced {n} session files, restarting {r} ssh sessions")
 
 
 def cmd_login() -> None:
@@ -209,6 +230,7 @@ def cmd_login() -> None:
     if current_account(USER_DATA):
         save_snapshot(USER_DATA, snapshots_root())
     clear_login(USER_DATA)
+    retire_ssh_processes(USER_DATA)
     launch_app()
     print("Log in with the other account in the app, then run: cswap desktop save <label>")
 
